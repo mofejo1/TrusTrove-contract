@@ -3,6 +3,7 @@
 use soroban_sdk::{contract, contractimpl, panic_with_error, token, Address, BytesN, Env};
 
 mod errors;
+mod events;
 mod test;
 mod types;
 
@@ -65,6 +66,7 @@ impl EscrowContract {
         };
         env.storage().persistent().set(&key, &record);
         env.storage().persistent().extend_ttl(&key, 100, 2_000_000);
+        events::funds_locked(&env, &invoice_id, amount);
 
         true
     }
@@ -93,6 +95,7 @@ impl EscrowContract {
         );
 
         env.storage().persistent().remove(&key);
+        events::released_to_issuer(&env, &invoice_id, &issuer, record.amount);
         true
     }
 
@@ -120,6 +123,7 @@ impl EscrowContract {
         );
 
         env.storage().persistent().remove(&key);
+        events::released_to_pool(&env, &invoice_id, &pool, repayment_amount);
         true
     }
 
@@ -151,6 +155,7 @@ impl EscrowContract {
         );
 
         env.storage().persistent().remove(&key);
+        events::default_resolved(&env, &invoice_id, &pool, record.amount);
         true
     }
 
